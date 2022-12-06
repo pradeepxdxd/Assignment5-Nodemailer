@@ -81,11 +81,42 @@ router.post("/regdata", upload.single('avatar'), async (req, res) => {
         password: hash,
         image: req.file.filename
     }).save().then(data => {
-        res.render('login', { title: 'Sign In' });
+        let mailOption = {
+            from : 'beastfake8@gmail.com',
+            to : email,
+            subject : 'Activion Account',
+            template : 'main',
+            context : {
+                username : name,
+                id : data._id
+            }
+        }
+        transporter.sendMail(mailOption, (err, info) => {
+            if(err) throw err;
+            else res.render('register');
+        })
     }).catch(err => {
         res.render('register');
     })
 });
+
+router.get('/activateaccount/:id', (req, res) => {
+    let id = req.params.id;
+    userModel.findOne({_id:id},(err,data)=>{
+        if(err){
+            res.send("Some Thing Went Wrong")
+        }
+        else {
+            userModel.updateOne({_id:id},{$set:{status:1}})
+            .then(data1=>{
+                res.render("activate",{username:data.username})
+            })
+            .catch(err=>{
+                res.send("Some Thing Went Wrong")
+            })
+        }
+    })
+})
 
 router.get('/login', (req, res) => {
     res.render('login', { title: 'Sign In' });
